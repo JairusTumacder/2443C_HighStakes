@@ -20,6 +20,11 @@
 // mogoMech             digital_out   A
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
+//Goals (Before Comp): Create 2 Autons (2 for red and flipped on the other side of the field) and a 46+ Skills Score 
+//P.S. All using just PID movements hopefully :)
+//Goals (After Comp): Make an Autonomous Selector on the brain screen and refine the regular and skills autos from the previous comp before our next comp 
+//P.S. Maybe also figure out how to use odometry with PID >:(
+
 #include "vex.h"
 
 using namespace vex;
@@ -102,12 +107,38 @@ int chassisControl() {
   return 1;
 }
 
+void redAuto1(){
+
+}
+
+void redAuto2(){
+
+}
+
+void blueAuto1(){
+
+}
+
+void blueAuto2(){
+
+}
+
+void skills(){
+
+}
+
 void autonomous(void) {
   vex::task chassisPID(chassisControl);
 
   // resetDriveSensor = true;
   // desiredY = 24;
   // desiredTheta = 90;
+
+  // redAuto1();
+  // redAuto2();
+  // blueAuto1();
+  // blueAuto2();
+  // skills();
 }
 
 // Toggles the mogo mech; changing between its on and off positions with the
