@@ -49,6 +49,7 @@ double kD = 0;
 double yEnc = 0;
 double prevYEnc = 0;
 
+double dist = 0;
 double desiredY = 0;
 
 double error = 0;
@@ -78,7 +79,9 @@ int chassisControl() {
 
     yEnc = rightMotorB.position(rotationUnits::deg);
 
-    error = (2 * M_PI * (yEnc - prevYEnc) * wheelRadius) - desiredY;
+    dist = (2 * M_PI * (yEnc - prevYEnc) * wheel_Radius);
+
+    error = dist - desiredY;
 
     derivative = error - prevError;
 
