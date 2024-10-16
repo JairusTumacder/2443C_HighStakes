@@ -20,10 +20,11 @@
 // mogoMech             digital_out   A
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
-//Goals (Before Comp): Create 2 Autons (2 for red and flipped on the other side of the field) and a 46+ Skills Score 
-//P.S. All using just PID movements hopefully :)
-//Goals (After Comp): Make an Autonomous Selector on the brain screen and refine the regular and skills autos from the previous comp before our next comp 
-//P.S. Maybe also figure out how to use odometry with PID >:(
+// Goals (Before Comp): Create 2 Autons (2 for red and flipped on the other side
+// of the field) and a 46+ Skills Score P.S. All using just PID movements
+// hopefully :) Goals (After Comp): Make an Autonomous Selector on the brain
+// screen and refine the regular and skills autos from the previous comp before
+// our next comp P.S. Maybe also figure out how to use odometry with PID >:(
 
 #include "vex.h"
 
@@ -71,6 +72,7 @@ double totalTurningError = 0;
 int chassisControl() {
   while (enableDrivePID) {
     if (resetDriveSensor) {
+      resetDriveSensor = false;
       rightMotorB.resetPosition();
     }
 
@@ -107,32 +109,22 @@ int chassisControl() {
   return 1;
 }
 
-void redAuto1(){
+void redAuto1() {}
 
-}
+void redAuto2() {}
 
-void redAuto2(){
+void blueAuto1() {}
 
-}
+void blueAuto2() {}
 
-void blueAuto1(){
-
-}
-
-void blueAuto2(){
-
-}
-
-void skills(){
-
-}
+void skills() {}
 
 void autonomous(void) {
   vex::task chassisPID(chassisControl);
 
-  // resetDriveSensor = true;
-  // desiredY = 24;
-  // desiredTheta = 90;
+  resetDriveSensor = true;
+  desiredY = 24;
+  desiredTheta = 90;
 
   // redAuto1();
   // redAuto2();
@@ -152,70 +144,107 @@ void toggleMogoMech() {
 }
 
 int intakeStates = 0;
-bool runningIntake = false;
 
 // Toggles the intake and conveyor; changing between intaking, outtaking, and
 // stopping states with a press of a button
-void toggleIntake() {
-  intake.setVelocity(100, pct);
-  if (intakeStates < 2) {
-    intakeStates++;
-  } else {
-    intakeStates = 0;
-  }
-
-  if (intakeStates == 1) {
-    intake.spin(fwd);
-    // runningIntake = true;
-    // while(runningIntake){
-    // if(intake.power() == 0){
-    //   intake.spin(reverse);
-    //   wait(0.5, msec);
-    //   intake.stop();
-    //   intakeStates = 0;
-    //   runningIntake = false;
-    // }
-    // }
-  } else if (intakeStates == 2) {
-    intake.spin(reverse);
-  } else {
-    intake.stop();
-  }
-}
-
-int armStates = 0;
-
-// Toggles the arm; changing between storing, scoring, and default positions
-// with the press of a button
-// void runArm() {
-//   if (armStates < 2) {
-//     armStates++;
+// void toggleIntake() {
+//   intake.setVelocity(100, pct);
+//   if (intakeStates < 2) {
+//     intakeStates++;
 //   } else {
-//     armStates = 0;
+//     intakeStates = 0;
 //   }
 
-//   if (armStates == 1) {
-//     arm.spinToPosition(45, deg);
-//   } else if (armStates == 2) {
-//     arm.spinToPosition(135, deg);
+//   if (intakeStates == 1) {
+//     intake.spin(fwd);
+//     runningIntake = true;
+//     while(runningIntake){
+//     if(intake.power() == 0){
+//       intake.spin(reverse);
+//       wait(0.5, msec);
+//       intake.stop();
+//       intakeStates = 0;
+//       runningIntake = false;
+//     }
+//     }
+//   } else if (intakeStates == 2) {
+//     intake.spin(reverse);
 //   } else {
-//     arm.spinToPosition(0, deg);
+//     intake.stop();
 //   }
 // }
 
+int armStates = 0;
+bool isStaged = false;
+
+// Toggles the arm; changing between staging and scoring position
+// with the press of a button
+void armToggle() {
+  if (armStates < 1) {
+    armStates++;
+  } else {
+    armStates = 0;
+  }
+
+  if (armStates == 1) {
+    // Arm's Staging Position
+    arm.spin(fwd);
+    waitUntil(Rotation10.position(rotationUnits::deg) <= 0);
+    arm.stop();
+    isStaged = true;
+  } else {
+    // Arm's Scoring Position
+    arm.spin(fwd);
+    waitUntil(Rotation10.position(rotationUnits::deg) <= 0);
+    arm.stop();
+    isStaged = false;
+  }
+}
+
+// Reset the arm's position to its starting position with the press of a button
+void resetArm() {
+  arm.spin(directionType::rev);
+  waitUntil(Rotation10.position(rotationUnits::deg) <= 0);
+  arm.stop();
+}
+
+// Prints the important values needed to test the driver controls
 void driverDashboard() {
   Controller1.Screen.clearScreen();
   Controller1.Screen.setCursor(1, 3);
-  Controller1.Screen.print("Arm Position: ", Rotation10.position(degrees));
+  Controller1.Screen.print(Rotation10.position(degrees));
   Controller1.Screen.setCursor(2, 3);
-  Controller1.Screen.print("Intake Power: ", intake.power());
+  Controller1.Screen.print(intake.power());
 }
 
 void usercontrol(void) {
   while (1) {
-    Controller1.ButtonA.pressed(toggleMogoMech);
-    Controller1.ButtonB.pressed(toggleIntake);
-    // Controller1.ButtonX.pressed(runArm);
+    //Sets the intake speed to max
+    intake.setVelocity(127, pct);
+
+    //Sets the arm to hold which stops the motor from moving by "holding" it there
+    arm.setStopping(brakeType::hold);
+    Controller1.ButtonL1.pressed(toggleMogoMech);
+
+    if (Controller1.ButtonR1.pressing()) {
+      intake.spin(fwd);
+      while (isStaged) {
+        if (intake.power() == 0) {
+          intake.spin(directionType::rev);
+          wait(0.5, msec);
+          intake.stop();
+          break;
+        }
+      }
+    } else if (Controller1.ButtonR2.pressing()) {
+      intake.spin(directionType::rev);
+    }
+
+    if (Controller1.ButtonL2.pressing()) {
+      Controller1.ButtonR1.pressed(armToggle);
+      Controller1.ButtonR2.pressed(resetArm);
+    }
+
     driverDashboard();
     wait(20, msec);
   }
