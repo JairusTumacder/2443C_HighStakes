@@ -46,8 +46,8 @@ double kP = 0;
 double kI = 0;
 double kD = 0;
 
-double yEnc = 0;
-double prevYEnc = 0;
+double REnc = 0;
+double LEnc = 0;
 
 double dist = 0;
 double desiredY = 0;
@@ -57,7 +57,7 @@ double prevError = 0;
 double derivative = 0;
 double totalError = 0;
 
-double turningKP = 0;
+double turningKP = 0.5;
 double turningKI = 0;
 double turningKD = 0;
 
@@ -74,18 +74,20 @@ int chassisControl() {
   while (enableDrivePID) {
     if (resetDriveSensor) {
       resetDriveSensor = false;
-      rightMotorB.resetPosition();
+      rightMotorB.setPosition(0, rotationUnits::deg);
+      leftMotorB.setPosition(0, rotationUnits::deg);
     }
 
-    yEnc = rightMotorB.position(rotationUnits::deg);
+    REnc = rightMotorB.position(rotationUnits::deg);
+    LEnc = leftMotorB.position(rotationUnits::deg);
 
-    dist = (2 * M_PI * (yEnc - prevYEnc) * wheel_Radius);
+    dist = (REnc + LEnc) / 2;
 
     error = dist - desiredY;
 
     derivative = error - prevError;
 
-    totalError += error;
+    totalError = error;
 
     double output = error * kP + totalError * kI + derivative * kD;
 
@@ -95,16 +97,17 @@ int chassisControl() {
 
     turningDerivative = turningError - prevTurningError;
 
-    totalTurningError += turningError;
+    totalTurningError = turningError;
 
-    double turningOutput = turningError * turningKP +
+    double turningOutput = (turningError * turningKP +
                            totalTurningError * turningKI +
-                           turningDerivative * turningKD;
+                           turningDerivative * turningKD) / 12.0;
 
     LeftDriveSmart.spin(fwd, output + turningOutput, voltageUnits::volt);
     RightDriveSmart.spin(fwd, output - turningOutput, voltageUnits::volt);
 
-    prevYEnc = yEnc;
+    Controller1.Screen.setCursor(3, 3);
+    Controller1.Screen.print(output);
     prevError = error;
     prevTurningError = turningError;
     vex::task::sleep(20);
@@ -112,7 +115,28 @@ int chassisControl() {
   return 1;
 }
 
-void redAuto1() {}
+void redAuto1() {;
+  Drivetrain.setTurnConstant(0.75);
+  Drivetrain.setTurnThreshold(0.1);
+  Drivetrain.setTurnVelocity(100, percentUnits::pct);
+  Drivetrain.setDriveVelocity(60, percentUnits::pct);
+  intake.setVelocity(127, percentUnits::pct);
+  Drivetrain.driveFor(directionType::rev, 40, inches);
+  RightDriveSmart.spin(directionType::rev);
+  wait(0.35, sec);
+  RightDriveSmart.stop();
+  Drivetrain.driveFor(directionType::rev, 40, inches);
+  mogoMech.set(true);
+  intake.spin(fwd);
+  Drivetrain.turnFor(right, 75, deg);
+  Drivetrain.driveFor(fwd, 60, inches);
+  // Drivetrain.turnFor(left, 15, deg);
+  // Drivetrain.driveFor(fwd, 20, inches);
+  // Drivetrain.turnFor(left, 70, deg);
+  // Drivetrain.driveFor(fwd, 40, inches);
+  // Drivetrain.turnFor(left, 90, deg);
+  // Drivetrain.driveFor(fwd, 60, inches);
+}
 
 void redAuto2() {}
 
@@ -123,13 +147,13 @@ void blueAuto2() {}
 void skills() {}
 
 void autonomous(void) {
-  vex::task chassisPID(chassisControl);
+  // vex::task chassisPID(chassisControl);
 
-  resetDriveSensor = true;
-  desiredY = 24;
-  desiredTheta = 90;
+  // resetDriveSensor = true;
+  // // desiredY = 24;
+  // desiredTheta = 90;
 
-  // redAuto1();
+  redAuto1();
   // redAuto2();
   // blueAuto1();
   // blueAuto2();
@@ -215,7 +239,7 @@ void resetArm() {
 void driverDashboard() {
   Controller1.Screen.clearScreen();
   Controller1.Screen.setCursor(1, 3);
-  Controller1.Screen.print(Rotation10.position(degrees));
+  Controller1.Screen.print(dist);
   Controller1.Screen.setCursor(2, 3);
   Controller1.Screen.print(intake.power());
 }
@@ -231,16 +255,20 @@ void usercontrol(void) {
 
     if (Controller1.ButtonR1.pressing()) {
       intake.spin(fwd);
-      while (isStaged) {
-        if (intake.power() == 0) {
-          intake.spin(directionType::rev);
-          wait(0.5, msec);
-          intake.stop();
-          break;
-        }
-      }
+      // while (isStaged) {
+      //   if (intake.power() == 0) {
+      //     intake.spin(directionType::rev);
+      //     wait(0.5, msec);
+      //     intake.stop();
+      //     break;
+      //   }
+      //}
+      waitUntil(!Controller1.ButtonR1.pressing());
+      intake.stop();
     } else if (Controller1.ButtonR2.pressing()) {
       intake.spin(directionType::rev);
+      waitUntil(!Controller1.ButtonR2.pressing());
+      intake.stop();
     }
 
     if (Controller1.ButtonL2.pressing()) {
