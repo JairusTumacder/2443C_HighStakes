@@ -89,6 +89,7 @@ int chassisControl() {
 
     totalError = error;
 
+
     double output = error * kP + totalError * kI + derivative * kD;
 
     absoluteTheta = 0 - DrivetrainInertial.angle(deg);
@@ -99,9 +100,10 @@ int chassisControl() {
 
     totalTurningError = turningError;
 
-    double turningOutput = (turningError * turningKP +
-                           totalTurningError * turningKI +
-                           turningDerivative * turningKD) / 12.0;
+    double turningOutput =
+        (turningError * turningKP + totalTurningError * turningKI +
+         turningDerivative * turningKD) /
+        12.0;
 
     LeftDriveSmart.spin(fwd, output + turningOutput, voltageUnits::volt);
     RightDriveSmart.spin(fwd, output - turningOutput, voltageUnits::volt);
@@ -115,30 +117,61 @@ int chassisControl() {
   return 1;
 }
 
-void redAuto1() {;
+void redAuto1() {
   Drivetrain.setTurnConstant(0.75);
-  Drivetrain.setTurnThreshold(0.1);
   Drivetrain.setTurnVelocity(100, percentUnits::pct);
   Drivetrain.setDriveVelocity(60, percentUnits::pct);
   intake.setVelocity(127, percentUnits::pct);
-  Drivetrain.driveFor(directionType::rev, 40, inches);
+  Drivetrain.driveFor(directionType::rev, 35, inches);
   RightDriveSmart.spin(directionType::rev);
   wait(0.35, sec);
   RightDriveSmart.stop();
+  Drivetrain.setDriveVelocity(15, pct);
   Drivetrain.driveFor(directionType::rev, 40, inches);
   mogoMech.set(true);
   intake.spin(fwd);
-  Drivetrain.turnFor(right, 75, deg);
-  Drivetrain.driveFor(fwd, 60, inches);
-  // Drivetrain.turnFor(left, 15, deg);
-  // Drivetrain.driveFor(fwd, 20, inches);
-  // Drivetrain.turnFor(left, 70, deg);
-  // Drivetrain.driveFor(fwd, 40, inches);
-  // Drivetrain.turnFor(left, 90, deg);
-  // Drivetrain.driveFor(fwd, 60, inches);
+  Drivetrain.setDriveVelocity(30, pct);
+  Drivetrain.turnFor(right, 70, deg);
+  Drivetrain.driveFor(fwd, 45, inches);
+  Drivetrain.driveFor(directionType::rev, 20, inches);
+  Drivetrain.turnFor(left, 10, deg);
+  Drivetrain.driveFor(fwd, 45, inches);
+  Drivetrain.driveFor(directionType::rev, 50, inches);
+  Drivetrain.turnFor(left, 35, deg);
+  Drivetrain.driveFor(fwd, 30, inches);
+  Drivetrain.turnFor(right, 185, deg);
+  intake.stop();
+  Drivetrain.driveFor(fwd, 63, inches);
 }
 
-void redAuto2() {}
+void redAuto2() {
+  Drivetrain.setTurnConstant(0.75);
+  Drivetrain.setTurnVelocity(100, percentUnits::pct);
+  Drivetrain.setDriveVelocity(60, percentUnits::pct);
+  intake.setVelocity(127, percentUnits::pct);
+  Drivetrain.driveFor(directionType::rev, 35, inches);
+  LeftDriveSmart.spin(directionType::rev);
+  wait(0.35, sec);
+  LeftDriveSmart.stop();
+  Drivetrain.setDriveVelocity(15, pct);
+  Drivetrain.driveFor(directionType::rev, 40, inches);
+  mogoMech.set(true);
+  Drivetrain.setDriveVelocity(60, pct);
+  Drivetrain.turnFor(left, 8, deg);
+  wait(0.5, sec);
+  intake.spin(fwd);
+  Drivetrain.driveFor(fwd, 65, inches);
+  wait(1, sec);
+  Drivetrain.driveFor(directionType::rev, 30, inches);
+  Drivetrain.turnFor(left, 63, deg);
+  Drivetrain.driveFor(fwd, 30, inches);
+  Drivetrain.driveFor(directionType::rev, 50, inches);
+  wait(2, sec);
+  mogoMech.set(false);
+  Drivetrain.setDriveVelocity(15, pct);
+  Drivetrain.driveFor(fwd, 10, inches);
+  Drivetrain.turnFor(right, 95, deg);
+}
 
 void blueAuto1() {}
 
@@ -153,8 +186,8 @@ void autonomous(void) {
   // // desiredY = 24;
   // desiredTheta = 90;
 
-  redAuto1();
-  // redAuto2();
+  //redAuto1();
+  redAuto2();
   // blueAuto1();
   // blueAuto2();
   // skills();
@@ -167,6 +200,16 @@ void toggleMogoMech() {
     mogoMech.set(true);
   } else {
     mogoMech.set(false);
+  }
+}
+
+// Toggles the doinker; changes between its on and off positions with the press
+// of a button
+void toggleDoinker() {
+  if (!doinker.value()) {
+    doinker.set(true);
+  } else {
+    doinker.set(false);
   }
 }
 
@@ -246,12 +289,15 @@ void driverDashboard() {
 
 void usercontrol(void) {
   while (1) {
-    //Sets the intake speed to max
+    // Sets the intake speed to max
     intake.setVelocity(127, pct);
 
-    //Sets the arm to hold which stops the motor from moving by "holding" it there
+    // Sets the arm to hold which stops the motor from moving by "holding" it
+    // there
     arm.setStopping(brakeType::hold);
+
     Controller1.ButtonL1.pressed(toggleMogoMech);
+    Controller1.ButtonX.pressed(toggleDoinker);
 
     if (Controller1.ButtonR1.pressing()) {
       intake.spin(fwd);
